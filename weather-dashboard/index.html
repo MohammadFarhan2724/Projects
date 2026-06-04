@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Weather Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#0f0c29,#302b63);min-height:100vh;padding:2rem 1rem;color:#fff;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+const API_KEY='46de0feea85240ff6a70c7e826ce4ec5';
+
+const mockCities=[
+  {name:'Lucknow',country:'IN',temp:38,feels:41,humidity:55,wind:12,desc:'Sunny',icon:'☀️',high:40,low:28},
+  {name:'Mumbai',country:'IN',temp:31,feels:36,humidity:82,wind:18,desc:'Partly Cloudy',icon:'⛅',high:33,low:27},
+  {name:'Delhi',country:'IN',temp:42,feels:45,humidity:30,wind:8,desc:'Clear',icon:'☀️',high:44,low:30},
+  {name:'Bengaluru',country:'IN',temp:26,feels:28,humidity:65,wind:10,desc:'Cloudy',icon:'☁️',high:28,low:20},
+];
+
+const weekDays=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const today=new Date().getDay();
+const forecast=Array.from({length:7},(_,i)=>({
+  day:weekDays[(today+i)%7],
+  high:Math.round(28+Math.random()*10),
+  low:Math.round(18+Math.random()*8),
+  icon:['☀️','⛅','🌧','☁️','🌤'][Math.floor(Math.random()*5)],
+}));
+
+function TempBar({high,low,absMin=15,absMax=50}){
+  const range=absMax-absMin;
+  const left=((low-absMin)/range)*100;
+  const width=((high-low)/range)*100;
+  return(
+    <div style={{position:'relative',height:4,background:'rgba(255,255,255,0.15)',borderRadius:999,width:'100%',margin:'6px 0'}}>
+      <div style={{position:'absolute',left:left+'%',width:width+'%',height:'100%',background:'linear-gradient(90deg,#60a5fa,#f97316)',borderRadius:999}}></div>
+    </div>
+  );
+}
+
+function App(){
+  const [cities,setCities]=useState(mockCities);
+  const [input,setInput]=useState('');
+  const [loading,setLoading]=useState(false);
+  const [active,setActive]=useState(0);
+  const [error,setError]=useState('');
+
+  const addCity=async()=>{
+    const city=input.trim();
+    if(!city)return;
+    if(cities.find(c=>c.name.toLowerCase()===city.toLowerCase())){setError('City already added.');return;}
+    setLoading(true);setError('');
+    try{
+      const res=await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`);
+      const d=await res.json();
+      if(d.cod!==200)throw new Error(d.message);
+      const icons={'01d':'☀️','01n':'🌙','02d':'⛅','02n':'⛅','03d':'☁️','04d':'☁️','09d':'🌧','10d':'🌦','11d':'⛈','13d':'❄️','50d':'🌫'};
+      setCities(p=>[...p,{name:d.name,country:d.sys.country,temp:Math.round(d.main.temp),feels:Math.round(d.main.feels_like),humidity:d.main.humidity,wind:Math.round(d.wind.speed*3.6),desc:d.weather[0].description,icon:icons[d.weather[0].icon]||'🌡',high:Math.round(d.main.temp_max),low:Math.round(d.main.temp_min)}]);
+      setActive(cities.length);
+    }catch(e){setError('City not found. Try another.');}
+    setInput('');setLoading(false);
+  };
+
+  const removeCity=idx=>{
+    setCities(p=>p.filter((_,i)=>i!==idx));
+    setActive(a=>Math.max(0,a===idx?0:a>idx?a-1:a));
+  };
+
+  const city=cities[active];
+
+  return(
+    <div style={{maxWidth:860,margin:'0 auto'}}>
+      <h1 style={{fontSize:'1.4rem',fontWeight:500,color:'#a5b4fc',marginBottom:'1.5rem'}}>🌤 Weather Dashboard</h1>
+      <div style={{display:'flex',gap:8,marginBottom:'0.5rem'}}>
+        <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addCity()} placeholder="Add a city..." style={{flex:1,padding:'10px 16px',border:'1px solid rgba(255,255,255,0.2)',borderRadius:10,background:'rgba(255,255,255,0.1)',color:'#fff',fontSize:14,outline:'none'}}/>
+        <button onClick={addCity} disabled={loading} style={{padding:'10px 20px',background:'#4f46e5',border:'none',borderRadius:10,color:'#fff',fontSize:14,fontWeight:600,cursor:'pointer'}}>{loading?'...':'Add'}</button>
+      </div>
+      {error&&<p style={{color:'#fca5a5',fontSize:13,marginBottom:'0.75rem'}}>{error}</p>}
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:'1.5rem'}}>
+        {cities.map((c,i)=>(
+          <div key={i} onClick={()=>setActive(i)} style={{padding:'7px 14px',borderRadius:999,border:'1.5px solid',borderColor:active===i?'#818cf8':'rgba(255,255,255,0.2)',background:active===i?'rgba(99,102,241,0.3)':'transparent',cursor:'pointer',display:'flex',alignItems:'center',gap:6,fontSize:13}}>
+            {c.name}
+            {i>=mockCities.length&&<span onClick={e=>{e.stopPropagation();removeCity(i);}} style={{color:'rgba(255,255,255,0.4)',fontSize:12,marginLeft:2}}>✕</span>}
+          </div>
+        ))}
+      </div>
+      {city&&(
+        <div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:14,marginBottom:14}}>
+            <div style={{background:'rgba(255,255,255,0.08)',borderRadius:16,padding:'1.5rem',border:'1px solid rgba(255,255,255,0.1)'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+                <div>
+                  <div style={{fontSize:'0.9rem',color:'#a5b4fc'}}>{city.name}, {city.country}</div>
+                  <div style={{fontSize:'3.5rem',fontWeight:200,margin:'8px 0'}}>{city.temp}°C</div>
+                  <div style={{fontSize:14,color:'#94a3b8',textTransform:'capitalize'}}>{city.desc}</div>
+                </div>
+                <div style={{fontSize:'3.5rem'}}>{city.icon}</div>
+              </div>
+              <div style={{display:'flex',gap:16,marginTop:'1rem',fontSize:13,color:'#94a3b8'}}>
+                <span>H: {city.high}°</span>
+                <span>L: {city.low}°</span>
+                <span>Feels {city.feels}°</span>
+              </div>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+              {[['💧','Humidity',city.humidity+'%'],['💨','Wind',city.wind+' km/h'],['🌡','High',city.high+'°C'],['❄️','Low',city.low+'°C']].map(([icon,label,val])=>(
+                <div key={label} style={{background:'rgba(255,255,255,0.08)',borderRadius:12,padding:'14px',border:'1px solid rgba(255,255,255,0.1)',textAlign:'center'}}>
+                  <div style={{fontSize:'1.5rem',marginBottom:4}}>{icon}</div>
+                  <div style={{fontSize:11,color:'#94a3b8',marginBottom:2}}>{label}</div>
+                  <div style={{fontSize:'1.1rem',fontWeight:600}}>{val}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{background:'rgba(255,255,255,0.08)',borderRadius:16,padding:'1.2rem 1.5rem',border:'1px solid rgba(255,255,255,0.1)'}}>
+            <div style={{fontSize:12,color:'#a5b4fc',marginBottom:'1rem',fontWeight:600}}>7-DAY FORECAST</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:8}}>
+              {forecast.map((f,i)=>(
+                <div key={i} style={{textAlign:'center'}}>
+                  <div style={{fontSize:11,color:'#94a3b8',marginBottom:6}}>{i===0?'Today':f.day}</div>
+                  <div style={{fontSize:'1.3rem',marginBottom:6}}>{f.icon}</div>
+                  <div style={{fontSize:12,fontWeight:600}}>{f.high}°</div>
+                  <TempBar high={f.high} low={f.low}/>
+                  <div style={{fontSize:11,color:'#94a3b8'}}>{f.low}°</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
