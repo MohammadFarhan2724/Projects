@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Notes App</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:#f8f9fa;min-height:100vh;}
+.header{background:#fff;border-bottom:1px solid #e5e7eb;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;}
+.header h1{font-size:1.2rem;font-weight:700;color:#1a1a2e;}
+.header button{padding:8px 18px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
+.header button:hover{background:#4338ca;}
+.search-bar{padding:1rem 2rem;background:#fff;border-bottom:1px solid #e5e7eb;}
+.search-bar input{width:100%;padding:9px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;}
+.search-bar input:focus{border-color:#4f46e5;}
+.notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;padding:1.5rem 2rem;}
+.note-card{background:#fff;border-radius:14px;padding:1.2rem;border:1.5px solid #e5e7eb;cursor:pointer;transition:box-shadow 0.2s,border-color 0.2s;position:relative;}
+.note-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.08);border-color:#c7d2fe;}
+.note-card h3{font-size:14px;font-weight:600;color:#1a1a2e;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.note-card p{font-size:13px;color:#6b7280;line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.note-card .note-date{font-size:11px;color:#9ca3af;margin-top:10px;}
+.note-card .del-btn{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;color:#d1d5db;font-size:15px;display:none;}
+.note-card:hover .del-btn{display:block;}
+.note-card .del-btn:hover{color:#ef4444;}
+.empty{text-align:center;color:#9ca3af;padding:4rem;grid-column:1/-1;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.modal{background:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:520px;display:flex;flex-direction:column;gap:10px;}
+.modal input{padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;font-weight:600;outline:none;}
+.modal input:focus{border-color:#4f46e5;}
+.modal textarea{padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;resize:vertical;min-height:180px;font-family:inherit;}
+.modal textarea:focus{border-color:#4f46e5;}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;}
+.modal-btns button{padding:9px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;}
+.btn-save{background:#4f46e5;color:#fff;border:none;}
+.btn-save:hover{background:#4338ca;}
+.btn-cancel{background:#f3f4f6;color:#374151;border:none;}
+.btn-cancel:hover{background:#e5e7eb;}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📝 Notes</h1>
+  <button onclick="openModal()">+ New Note</button>
+</div>
+<div class="search-bar">
+  <input type="text" id="search" placeholder="Search notes..." oninput="renderNotes()"/>
+</div>
+<div class="notes-grid" id="notes-grid"></div>
+<div class="modal-overlay" id="modal" style="display:none;">
+  <div class="modal">
+    <input type="text" id="note-title" placeholder="Title"/>
+    <textarea id="note-body" placeholder="Write your note here..."></textarea>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveNote()">Save</button>
+    </div>
+  </div>
+</div>
+<script>
+let notes=JSON.parse(localStorage.getItem('notes_app')||'[]');
+let editId=null;
+const colors=['#fff','#fef9c3','#dcfce7','#dbeafe','#fce7f3','#ede9fe'];
+function save(){localStorage.setItem('notes_app',JSON.stringify(notes));}
+function renderNotes(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const grid=document.getElementById('notes-grid');
+  const filtered=notes.filter(n=>n.title.toLowerCase().includes(q)||n.body.toLowerCase().includes(q));
+  if(!filtered.length){grid.innerHTML='<div class="empty">No notes found.</div>';return;}
+  grid.innerHTML='';
+  filtered.slice().reverse().forEach((n,i)=>{
+    const realIdx=notes.findIndex(x=>x.id===n.id);
+    grid.innerHTML+=`<div class="note-card" style="background:${n.color}" onclick="openModal(${realIdx})">
+      <button class="del-btn" onclick="event.stopPropagation();deleteNote(${realIdx})">✕</button>
+      <h3>${n.title||'Untitled'}</h3>
+      <p>${n.body}</p>
+      <div class="note-date">${new Date(n.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+    </div>`;
+  });
+}
+function openModal(idx){
+  editId=idx!==undefined?idx:null;
+  if(editId!==null){document.getElementById('note-title').value=notes[editId].title;document.getElementById('note-body').value=notes[editId].body;}
+  else{document.getElementById('note-title').value='';document.getElementById('note-body').value='';}
+  document.getElementById('modal').style.display='flex';
+  setTimeout(()=>document.getElementById('note-title').focus(),100);
+}
+function closeModal(){document.getElementById('modal').style.display='none';editId=null;}
+function saveNote(){
+  const title=document.getElementById('note-title').value.trim();
+  const body=document.getElementById('note-body').value.trim();
+  if(!title&&!body)return;
+  if(editId!==null){notes[editId].title=title;notes[editId].body=body;notes[editId].date=Date.now();}
+  else{notes.push({id:Date.now(),title,body,date:Date.now(),color:colors[Math.floor(Math.random()*colors.length)]});}
+  save();renderNotes();closeModal();
+}
+function deleteNote(i){if(confirm('Delete this note?')){notes.splice(i,1);save();renderNotes();}}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+renderNotes();
+</script>
+</body>
+</html>
