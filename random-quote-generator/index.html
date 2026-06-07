@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Random Quote Generator</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:#0f0c29;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;}
+.card{background:#fff;border-radius:20px;padding:3rem 2.5rem;max-width:600px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+.quote-icon{font-size:3rem;color:#4f46e5;margin-bottom:1rem;line-height:1;}
+#quote{font-size:1.25rem;font-weight:400;color:#1a1a2e;line-height:1.7;margin-bottom:1.5rem;min-height:80px;transition:opacity 0.3s;}
+#author{font-size:14px;color:#6b7280;margin-bottom:2rem;font-style:italic;}
+.btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+button{padding:10px 24px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-new{background:#4f46e5;color:#fff;border:none;}
+.btn-new:hover{background:#4338ca;}
+.btn-tweet{background:#1d9bf0;color:#fff;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+.btn-tweet:hover{background:#1a8cd8;}
+.loading{color:#9ca3af;font-size:14px;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="quote-icon">"</div>
+  <p id="quote" class="loading">Loading quote...</p>
+  <p id="author"></p>
+  <div class="btns">
+    <button class="btn-new" onclick="fetchQuote()">New Quote</button>
+    <button class="btn-tweet" onclick="tweetQuote()">🐦 Tweet</button>
+  </div>
+</div>
+<script>
+const fallback=[
+  {q:"The only way to do great work is to love what you do.",a:"Steve Jobs"},
+  {q:"In the middle of every difficulty lies opportunity.",a:"Albert Einstein"},
+  {q:"It does not matter how slowly you go as long as you do not stop.",a:"Confucius"},
+  {q:"Life is what happens when you're busy making other plans.",a:"John Lennon"},
+  {q:"The future belongs to those who believe in the beauty of their dreams.",a:"Eleanor Roosevelt"},
+  {q:"Success is not final, failure is not fatal: it is the courage to continue that counts.",a:"Winston Churchill"},
+  {q:"You miss 100% of the shots you don't take.",a:"Wayne Gretzky"},
+  {q:"Whether you think you can or you think you can't, you're right.",a:"Henry Ford"},
+];
+let current={q:'',a:''};
+async function fetchQuote(){
+  const quoteEl=document.getElementById('quote');
+  const authorEl=document.getElementById('author');
+  quoteEl.style.opacity='0';
+  try{
+    const res=await fetch('https://api.quotable.io/random');
+    if(!res.ok)throw new Error();
+    const data=await res.json();
+    current={q:data.content,a:data.author};
+  }catch{
+    const r=fallback[Math.floor(Math.random()*fallback.length)];
+    current={q:r.q,a:r.a};
+  }
+  setTimeout(()=>{
+    quoteEl.textContent=current.q;
+    authorEl.textContent='— '+current.a;
+    quoteEl.style.opacity='1';
+  },200);
+}
+function tweetQuote(){
+  const url=`https://twitter.com/intent/tweet?text=${encodeURIComponent('"'+current.q+'" — '+current.a)}`;
+  window.open(url,'_blank');
+}
+fetchQuote();
+</script>
+</body>
+</html>
