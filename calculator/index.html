@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Calculator</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:#1a1a2e;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+.calc{background:#16213e;border-radius:20px;padding:24px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+.display{background:#0f3460;border-radius:12px;padding:16px 20px;margin-bottom:16px;text-align:right;}
+.display .expr{font-size:13px;color:#a0a0c0;min-height:18px;margin-bottom:4px;word-break:break-all;}
+.display .current{font-size:2rem;color:#fff;font-weight:300;word-break:break-all;}
+.buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+button{padding:18px 0;border:none;border-radius:10px;font-size:16px;font-weight:500;cursor:pointer;transition:transform 0.1s,opacity 0.1s;}
+button:active{transform:scale(0.94);}
+.btn-num{background:#1a1a4e;color:#fff;}
+.btn-num:hover{background:#2a2a6e;}
+.btn-op{background:#4f46e5;color:#fff;}
+.btn-op:hover{background:#4338ca;}
+.btn-eq{background:#e5466b;color:#fff;}
+.btn-eq:hover{background:#c93d5d;}
+.btn-clear{background:#374151;color:#fff;}
+.btn-clear:hover{background:#4b5563;}
+.span2{grid-column:span 2;}
+</style>
+</head>
+<body>
+<div class="calc">
+  <div class="display">
+    <div class="expr" id="expr"></div>
+    <div class="current" id="current">0</div>
+  </div>
+  <div class="buttons">
+    <button class="btn-clear" onclick="clearAll()">AC</button>
+    <button class="btn-clear" onclick="toggleSign()">+/-</button>
+    <button class="btn-clear" onclick="percent()">%</button>
+    <button class="btn-op" onclick="setOp('/')">÷</button>
+    <button class="btn-num" onclick="appendNum('7')">7</button>
+    <button class="btn-num" onclick="appendNum('8')">8</button>
+    <button class="btn-num" onclick="appendNum('9')">9</button>
+    <button class="btn-op" onclick="setOp('*')">×</button>
+    <button class="btn-num" onclick="appendNum('4')">4</button>
+    <button class="btn-num" onclick="appendNum('5')">5</button>
+    <button class="btn-num" onclick="appendNum('6')">6</button>
+    <button class="btn-op" onclick="setOp('-')">−</button>
+    <button class="btn-num" onclick="appendNum('1')">1</button>
+    <button class="btn-num" onclick="appendNum('2')">2</button>
+    <button class="btn-num" onclick="appendNum('3')">3</button>
+    <button class="btn-op" onclick="setOp('+')">+</button>
+    <button class="btn-num span2" onclick="appendNum('0')">0</button>
+    <button class="btn-num" onclick="appendDot()">.</button>
+    <button class="btn-eq" onclick="calculate()">=</button>
+  </div>
+</div>
+<script>
+let current='0',prev='',op=null,resetNext=false;
+const disp=()=>{document.getElementById('current').textContent=current;document.getElementById('expr').textContent=prev+(op?(' '+op+' '):'');}
+function appendNum(n){if(resetNext){current=n;resetNext=false;}else{current=current==='0'?n:current+n;}disp();}
+function appendDot(){if(resetNext){current='0.';resetNext=false;}else if(!current.includes('.')){current+='.';} disp();}
+function setOp(o){if(op&&!resetNext){calculate();}prev=current;op=o;resetNext=true;disp();}
+function calculate(){if(!op||!prev)return;const a=parseFloat(prev),b=parseFloat(current);let r;switch(op){case'+':r=a+b;break;case'-':r=a-b;break;case'*':r=a*b;break;case'/':r=b!==0?a/b:'Error';break;}current=String(parseFloat(r.toFixed(10)));prev='';op=null;resetNext=true;disp();}
+function clearAll(){current='0';prev='';op=null;resetNext=false;disp();}
+function toggleSign(){current=String(parseFloat(current)*-1);disp();}
+function percent(){current=String(parseFloat(current)/100);disp();}
+document.addEventListener('keydown',e=>{if(e.key>='0'&&e.key<='9')appendNum(e.key);else if(e.key==='.')appendDot();else if(['+','-','*','/'].includes(e.key))setOp(e.key);else if(e.key==='Enter'||e.key==='=')calculate();else if(e.key==='Escape')clearAll();});
+</script>
+</body>
+</html>
