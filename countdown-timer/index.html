@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Countdown Timer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#1a1a2e,#302b63);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:24px;padding:2.5rem 2rem;max-width:500px;width:100%;text-align:center;color:#fff;}
+h1{font-size:1.3rem;font-weight:500;color:#a5b4fc;margin-bottom:2rem;}
+.input-group{margin-bottom:1.5rem;}
+.input-group label{display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;}
+.input-group input{width:100%;padding:10px 14px;border:1px solid rgba(255,255,255,0.2);border-radius:10px;background:rgba(255,255,255,0.08);color:#fff;font-size:14px;outline:none;}
+.input-group input::-webkit-calendar-picker-indicator{filter:invert(1);opacity:0.6;}
+.btns{display:flex;gap:10px;justify-content:center;margin-bottom:2rem;}
+button{padding:10px 24px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-start{background:#4f46e5;color:#fff;}
+.btn-start:hover{background:#4338ca;}
+.btn-reset{background:rgba(255,255,255,0.1);color:#fff;}
+.btn-reset:hover{background:rgba(255,255,255,0.2);}
+.countdown{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:1rem;}
+.unit{background:rgba(255,255,255,0.1);border-radius:14px;padding:1.2rem 1.5rem;min-width:80px;}
+.unit .num{font-size:2.5rem;font-weight:300;color:#fff;}
+.unit .label{font-size:11px;color:#94a3b8;letter-spacing:0.1em;margin-top:4px;}
+.message{font-size:1.2rem;color:#a5b4fc;padding:1rem 0;display:none;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>⏳ Countdown Timer</h1>
+  <div class="input-group">
+    <label>Target Date & Time</label>
+    <input type="datetime-local" id="target-input"/>
+  </div>
+  <div class="btns">
+    <button class="btn-start" onclick="startCountdown()">Start</button>
+    <button class="btn-reset" onclick="resetCountdown()">Reset</button>
+  </div>
+  <div class="countdown" id="countdown">
+    <div class="unit"><div class="num" id="days">00</div><div class="label">DAYS</div></div>
+    <div class="unit"><div class="num" id="hours">00</div><div class="label">HOURS</div></div>
+    <div class="unit"><div class="num" id="mins">00</div><div class="label">MINS</div></div>
+    <div class="unit"><div class="num" id="secs">00</div><div class="label">SECS</div></div>
+  </div>
+  <div class="message" id="message">🎉 Time's up!</div>
+</div>
+<script>
+let timer=null;
+function pad(n){return String(n).padStart(2,'0');}
+function startCountdown(){
+  const val=document.getElementById('target-input').value;
+  if(!val)return alert('Please select a date and time.');
+  if(timer)clearInterval(timer);
+  function tick(){
+    const now=new Date().getTime();
+    const target=new Date(val).getTime();
+    const diff=target-now;
+    if(diff<=0){
+      clearInterval(timer);
+      ['days','hours','mins','secs'].forEach(id=>document.getElementById(id).textContent='00');
+      document.getElementById('message').style.display='block';
+      return;
+    }
+    document.getElementById('message').style.display='none';
+    document.getElementById('days').textContent=pad(Math.floor(diff/(1000*60*60*24)));
+    document.getElementById('hours').textContent=pad(Math.floor((diff%(1000*60*60*24))/(1000*60*60)));
+    document.getElementById('mins').textContent=pad(Math.floor((diff%(1000*60*60))/(1000*60)));
+    document.getElementById('secs').textContent=pad(Math.floor((diff%(1000*60))/1000));
+  }
+  tick();timer=setInterval(tick,1000);
+}
+function resetCountdown(){
+  clearInterval(timer);
+  ['days','hours','mins','secs'].forEach(id=>document.getElementById(id).textContent='00');
+  document.getElementById('target-input').value='';
+  document.getElementById('message').style.display='none';
+}
+const now=new Date();now.setDate(now.getDate()+7);
+document.getElementById('target-input').value=now.toISOString().slice(0,16);
+</script>
+</body>
+</html>
