@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Digital Clock</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:#0f0c29;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;}
+.clock-wrap{text-align:center;}
+.time{font-size:clamp(3rem,12vw,7rem);font-weight:200;letter-spacing:0.05em;color:#fff;}
+.time .colon{color:#4f46e5;animation:blink 1s step-end infinite;}
+@keyframes blink{50%{opacity:0.3;}}
+.ampm{font-size:1.5rem;color:#818cf8;margin-left:10px;font-weight:400;}
+.date{font-size:1.1rem;color:#94a3b8;margin-top:12px;letter-spacing:0.08em;}
+.timezone{font-size:13px;color:#4f46e5;margin-top:8px;letter-spacing:0.1em;}
+</style>
+</head>
+<body>
+<div class="clock-wrap">
+  <div class="time" id="time"></div>
+  <div class="date" id="date"></div>
+  <div class="timezone" id="tz"></div>
+</div>
+<script>
+const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function pad(n){return String(n).padStart(2,'0');}
+function tick(){
+  const now=new Date();
+  let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+  const ampm=h>=12?'PM':'AM';
+  h=h%12||12;
+  document.getElementById('time').innerHTML=`${pad(h)}<span class="colon">:</span>${pad(m)}<span class="colon">:</span>${pad(s)}<span class="ampm">${ampm}</span>`;
+  document.getElementById('date').textContent=`${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+  document.getElementById('tz').textContent=Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+tick();setInterval(tick,1000);
+</script>
+</body>
+</html>
