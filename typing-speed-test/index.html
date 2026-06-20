@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Typing Speed Test</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.card{background:#fff;border-radius:20px;padding:2rem;max-width:620px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
+h1{font-size:1.3rem;font-weight:700;color:#1a1a2e;margin-bottom:0.3rem;}
+.subtitle{font-size:13px;color:#6b7280;margin-bottom:1.5rem;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem;}
+.stat{background:#f8f9ff;border-radius:12px;padding:12px;text-align:center;}
+.stat .num{font-size:1.5rem;font-weight:700;color:#4f46e5;}
+.stat .lbl{font-size:11px;color:#9ca3af;margin-top:2px;}
+.timer-bar-wrap{background:#e5e7eb;border-radius:999px;height:6px;margin-bottom:1.5rem;overflow:hidden;}
+.timer-bar{height:100%;background:#4f46e5;border-radius:999px;transition:width 0.5s linear;}
+.text-display{background:#f8f9ff;border-radius:12px;padding:1.2rem;font-size:1.05rem;line-height:1.9;margin-bottom:1rem;min-height:90px;letter-spacing:0.02em;}
+.char{color:#9ca3af;}
+.char.correct{color:#22c55e;}
+.char.wrong{color:#ef4444;background:#fee2e2;border-radius:2px;}
+.char.cursor{border-left:2px solid #4f46e5;}
+.input-area{width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;font-family:inherit;resize:none;}
+.input-area:focus{border-color:#4f46e5;}
+.btns{display:flex;gap:8px;margin-top:10px;}
+button{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.2s;}
+.btn-start{background:#4f46e5;color:#fff;}
+.btn-start:hover{background:#4338ca;}
+.btn-reset{background:#f3f4f6;color:#374151;}
+.btn-reset:hover{background:#e5e7eb;}
+.result-banner{background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:14px;padding:1.5rem;text-align:center;color:#fff;margin-top:1rem;display:none;}
+.result-banner .big{font-size:2.5rem;font-weight:700;}
+.result-banner p{font-size:14px;opacity:0.85;margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>⌨️ Typing Speed Test</h1>
+  <p class="subtitle">60 seconds — type the paragraph as fast and accurately as you can</p>
+  <div class="stats">
+    <div class="stat"><div class="num" id="wpm">0</div><div class="lbl">WPM</div></div>
+    <div class="stat"><div class="num" id="accuracy">100%</div><div class="lbl">Accuracy</div></div>
+    <div class="stat"><div class="num" id="chars">0</div><div class="lbl">Chars</div></div>
+    <div class="stat"><div class="num" id="timer">60</div><div class="lbl">Seconds</div></div>
+  </div>
+  <div class="timer-bar-wrap"><div class="timer-bar" id="timer-bar" style="width:100%"></div></div>
+  <div class="text-display" id="text-display"></div>
+  <textarea class="input-area" id="input-area" rows="3" placeholder="Click 'Start' and begin typing..." disabled></textarea>
+  <div class="btns">
+    <button class="btn-start" onclick="startTest()">Start</button>
+    <button class="btn-reset" onclick="resetTest()">Reset</button>
+  </div>
+  <div class="result-banner" id="result-banner">
+    <div class="big" id="final-wpm"></div>
+    <p id="final-details"></p>
+  </div>
+</div>
+<script>
+const paragraphs=[
+  "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump! The five boxing wizards jump quickly.",
+  "Success is not final, failure is not fatal: it is the courage to continue that counts. Every moment is a fresh beginning. Keep going, because you did not come this far to only come this far.",
+  "Learning to code is one of the most valuable skills you can develop. It teaches you how to think logically, solve problems creatively, and build tools that can change the world.",
+  "The best time to plant a tree was twenty years ago. The second best time is now. Take action today and do not wait for the perfect moment that may never come.",
+];
+let timer=null,timeLeft=60,started=false,idx=0;
+let text='',typed='',correct=0,total=0;
+function renderText(){
+  const el=document.getElementById('text-display');
+  el.innerHTML='';
+  text.split('').forEach((c,i)=>{
+    const span=document.createElement('span');
+    span.className='char';
+    if(i===typed.length)span.classList.add('cursor');
+    if(i<typed.length)span.classList.add(typed[i]===c?'correct':'wrong');
+    span.textContent=c;
+    el.appendChild(span);
+  });
+}
+function startTest(){
+  if(started)return;
+  text=paragraphs[Math.floor(Math.random()*paragraphs.length)];
+  typed='';idx=0;correct=0;total=0;timeLeft=60;started=true;
+  renderText();
+  document.getElementById('input-area').disabled=false;
+  document.getElementById('input-area').value='';
+  document.getElementById('input-area').focus();
+  document.getElementById('result-banner').style.display='none';
+  timer=setInterval(()=>{
+    timeLeft--;
+    document.getElementById('timer').textContent=timeLeft;
+    document.getElementById('timer-bar').style.width=(timeLeft/60*100)+'%';
+    updateStats();
+    if(timeLeft<=0){clearInterval(timer);endTest();}
+  },1000);
+}
+function updateStats(){
+  const words=typed.trim().split(/\s+/).filter(Boolean).length;
+  const elapsed=Math.max(1,60-timeLeft)/60;
+  const wpm=Math.round(words/elapsed);
+  const acc=total>0?Math.round((correct/total)*100):100;
+  document.getElementById('wpm').textContent=wpm;
+  document.getElementById('accuracy').textContent=acc+'%';
+  document.getElementById('chars').textContent=typed.length;
+}
+function endTest(){
+  started=false;
+  document.getElementById('input-area').disabled=true;
+  const words=typed.trim().split(/\s+/).filter(Boolean).length;
+  const acc=total>0?Math.round((correct/total)*100):100;
+  document.getElementById('final-wpm').textContent=words+' WPM';
+  document.getElementById('final-details').textContent=`Accuracy: ${acc}% · Characters: ${typed.length}`;
+  document.getElementById('result-banner').style.display='block';
+}
+function resetTest(){
+  clearInterval(timer);started=false;timeLeft=60;typed='';correct=0;total=0;
+  document.getElementById('wpm').textContent='0';
+  document.getElementById('accuracy').textContent='100%';
+  document.getElementById('chars').textContent='0';
+  document.getElementById('timer').textContent='60';
+  document.getElementById('timer-bar').style.width='100%';
+  document.getElementById('text-display').innerHTML='';
+  document.getElementById('input-area').value='';
+  document.getElementById('input-area').disabled=true;
+  document.getElementById('result-banner').style.display='none';
+}
+document.getElementById('input-area').addEventListener('input',function(){
+  if(!started)return;
+  typed=this.value;
+  correct=0;total=typed.length;
+  for(let i=0;i<typed.length;i++){if(typed[i]===text[i])correct++;}
+  renderText();updateStats();
+  if(typed.length>=text.length){clearInterval(timer);endTest();}
+});
+</script>
+</body>
+</html>
