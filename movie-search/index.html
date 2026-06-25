@@ -43,7 +43,6 @@ h1{font-size:1.8rem;font-weight:700;margin-bottom:0.3rem;color:#fff;}
 <div class="container">
   <h1>🎬 Movie Search</h1>
   <p class="subtitle">Search any movie or TV show</p>
-  <p class="api-note">Requires OMDB API key — see README. Get free key at omdbapi.com</p>
   <div class="search-row">
     <input type="text" id="search-input" placeholder="Search movies, series..."/>
     <button onclick="searchMovies()">Search</button>
@@ -67,7 +66,7 @@ h1{font-size:1.8rem;font-weight:700;margin-bottom:0.3rem;color:#fff;}
   </div>
 </div>
 <script>
-const API_KEY='YOUR_OMDB_API_KEY';
+const API_KEY='727e242e';
 async function searchMovies(){
   const q=document.getElementById('search-input').value.trim();
   if(!q)return;
