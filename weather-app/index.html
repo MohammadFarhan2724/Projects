@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Weather App</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#1a1a2e,#302b63);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.card{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.2);border-radius:24px;padding:2rem;width:100%;max-width:420px;color:#fff;}
+h1{font-size:1.3rem;font-weight:500;margin-bottom:1.5rem;text-align:center;color:#a5b4fc;}
+.search-row{display:flex;gap:8px;margin-bottom:1.5rem;}
+.search-row input{flex:1;padding:10px 16px;border:1px solid rgba(255,255,255,0.3);border-radius:10px;background:rgba(255,255,255,0.1);color:#fff;font-size:14px;outline:none;}
+.search-row input::placeholder{color:rgba(255,255,255,0.5);}
+.search-row button{padding:10px 18px;background:#4f46e5;border:none;border-radius:10px;color:#fff;font-size:14px;cursor:pointer;}
+.search-row button:hover{background:#4338ca;}
+.weather-main{text-align:center;padding:1rem 0;}
+.weather-icon{font-size:5rem;margin-bottom:0.5rem;}
+.city-name{font-size:1.5rem;font-weight:600;}
+.country{font-size:14px;color:#a5b4fc;margin-bottom:0.5rem;}
+.temp{font-size:3.5rem;font-weight:200;margin:0.5rem 0;}
+.description{font-size:1rem;color:#c7d2fe;text-transform:capitalize;margin-bottom:1.5rem;}
+.details{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.detail-box{background:rgba(255,255,255,0.1);border-radius:12px;padding:12px;text-align:center;}
+.detail-label{font-size:11px;color:#a5b4fc;margin-bottom:4px;}
+.detail-value{font-size:1rem;font-weight:500;}
+.error{text-align:center;color:#fca5a5;font-size:14px;padding:1rem 0;}
+.loading{text-align:center;color:#a5b4fc;font-size:14px;padding:1rem 0;}
+#result{display:none;}
+.api-note{font-size:11px;color:rgba(255,255,255,0.4);text-align:center;margin-top:1rem;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🌤 Weather App</h1>
+  <div class="search-row">
+    <input type="text" id="city-input" placeholder="Enter city name..." />
+    <button onclick="getWeather()">Search</button>
+  </div>
+  <div id="loading" class="loading" style="display:none;">Fetching weather...</div>
+  <div id="error" class="error" style="display:none;"></div>
+  <div id="result">
+    <div class="weather-main">
+      <div class="weather-icon" id="icon"></div>
+      <div class="city-name" id="city-name"></div>
+      <div class="country" id="country"></div>
+      <div class="temp" id="temp"></div>
+      <div class="description" id="desc"></div>
+    </div>
+    <div class="details">
+      <div class="detail-box"><div class="detail-label">Feels Like</div><div class="detail-value" id="feels"></div></div>
+      <div class="detail-box"><div class="detail-label">Humidity</div><div class="detail-value" id="humidity"></div></div>
+      <div class="detail-box"><div class="detail-label">Wind Speed</div><div class="detail-value" id="wind"></div></div>
+      <div class="detail-box"><div class="detail-label">Visibility</div><div class="detail-value" id="visibility"></div></div>
+    </div>
+  </div>
+  <p class="api-note">Requires OpenWeatherMap API key — see README</p>
+</div>
+<script>
+const API_KEY = 'YOUR_API_KEY_HERE';
+const icons = {
+  '01d':'☀️','01n':'🌙','02d':'⛅','02n':'⛅','03d':'☁️','03n':'☁️',
+  '04d':'☁️','04n':'☁️','09d':'🌧','09n':'🌧','10d':'🌦','10n':'🌧',
+  '11d':'⛈','11n':'⛈','13d':'❄️','13n':'❄️','50d':'🌫','50n':'🌫'
+};
+async function getWeather(){
+  const city=document.getElementById('city-input').value.trim();
+  if(!city)return;
+  document.getElementById('loading').style.display='block';
+  document.getElementById('result').style.display='none';
+  document.getElementById('error').style.display='none';
+  try{
+    const res=await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`);
+    const data=await res.json();
+    if(data.cod!==200){throw new Error(data.message);}
+    document.getElementById('icon').textContent=icons[data.weather[0].icon]||'🌡';
+    document.getElementById('city-name').textContent=data.name;
+    document.getElementById('country').textContent=data.sys.country;
+    document.getElementById('temp').textContent=Math.round(data.main.temp)+'°C';
+    document.getElementById('desc').textContent=data.weather[0].description;
+    document.getElementById('feels').textContent=Math.round(data.main.feels_like)+'°C';
+    document.getElementById('humidity').textContent=data.main.humidity+'%';
+    document.getElementById('wind').textContent=Math.round(data.wind.speed*3.6)+' km/h';
+    document.getElementById('visibility').textContent=(data.visibility/1000).toFixed(1)+' km';
+    document.getElementById('result').style.display='block';
+  }catch(e){
+    document.getElementById('error').textContent='City not found. Try again.';
+    document.getElementById('error').style.display='block';
+  }finally{document.getElementById('loading').style.display='none';}
+}
+document.getElementById('city-input').addEventListener('keydown',e=>{if(e.key==='Enter')getWeather();});
+</script>
+</body>
+</html>
