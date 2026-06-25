@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Movie Search</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:#141414;min-height:100vh;color:#fff;padding:2rem 1rem;}
+.container{max-width:900px;margin:0 auto;}
+h1{font-size:1.8rem;font-weight:700;margin-bottom:0.3rem;color:#fff;}
+.subtitle{font-size:14px;color:#737373;margin-bottom:2rem;}
+.search-row{display:flex;gap:8px;margin-bottom:2rem;}
+.search-row input{flex:1;padding:12px 18px;border:none;border-radius:10px;background:#2b2b2b;color:#fff;font-size:15px;outline:none;}
+.search-row input::placeholder{color:#737373;}
+.search-row input:focus{background:#333;}
+.search-row button{padding:12px 24px;background:#e50914;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;}
+.search-row button:hover{background:#c40812;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;}
+.movie-card{background:#2b2b2b;border-radius:12px;overflow:hidden;cursor:pointer;transition:transform 0.2s;}
+.movie-card:hover{transform:scale(1.04);}
+.movie-card img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;}
+.movie-card .info{padding:10px;}
+.movie-card .title{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.movie-card .year{font-size:12px;color:#737373;margin-top:2px;}
+.movie-card .type{font-size:11px;color:#e50914;text-transform:capitalize;margin-top:2px;}
+.error{color:#e50914;text-align:center;padding:2rem;}
+.loading{color:#737373;text-align:center;padding:2rem;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.modal{background:#1f1f1f;border-radius:16px;max-width:600px;width:100%;overflow:hidden;display:flex;flex-direction:column;}
+.modal-body{display:flex;gap:1.5rem;padding:1.5rem;}
+.modal img{width:140px;border-radius:8px;flex-shrink:0;object-fit:cover;}
+.modal-info h2{font-size:1.2rem;margin-bottom:4px;}
+.modal-info .meta{font-size:13px;color:#737373;margin-bottom:10px;}
+.modal-info p{font-size:13px;color:#ccc;line-height:1.6;}
+.rating{display:inline-block;background:#e50914;color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:6px;margin-bottom:8px;}
+.close-btn{align-self:flex-end;margin:12px 12px 0;background:none;border:none;color:#737373;font-size:22px;cursor:pointer;}
+.close-btn:hover{color:#fff;}
+.api-note{font-size:11px;color:#737373;margin-bottom:1rem;}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎬 Movie Search</h1>
+  <p class="subtitle">Search any movie or TV show</p>
+  <p class="api-note">Requires OMDB API key — see README. Get free key at omdbapi.com</p>
+  <div class="search-row">
+    <input type="text" id="search-input" placeholder="Search movies, series..."/>
+    <button onclick="searchMovies()">Search</button>
+  </div>
+  <div id="loading" class="loading" style="display:none;">Searching...</div>
+  <div id="error" class="error" style="display:none;"></div>
+  <div class="grid" id="grid"></div>
+</div>
+<div class="modal-overlay" id="modal" style="display:none;">
+  <div class="modal">
+    <button class="close-btn" onclick="closeModal()">✕</button>
+    <div class="modal-body">
+      <img id="m-poster" src="" alt="poster"/>
+      <div class="modal-info">
+        <h2 id="m-title"></h2>
+        <div class="meta" id="m-meta"></div>
+        <div class="rating" id="m-rating"></div>
+        <p id="m-plot"></p>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const API_KEY='YOUR_OMDB_API_KEY';
+async function searchMovies(){
+  const q=document.getElementById('search-input').value.trim();
+  if(!q)return;
+  document.getElementById('loading').style.display='block';
+  document.getElementById('error').style.display='none';
+  document.getElementById('grid').innerHTML='';
+  try{
+    const res=await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(q)}&apikey=${API_KEY}`);
+    const data=await res.json();
+    if(data.Response==='False')throw new Error(data.Error);
+    renderMovies(data.Search);
+  }catch(e){document.getElementById('error').textContent=e.message;document.getElementById('error').style.display='block';}
+  finally{document.getElementById('loading').style.display='none';}
+}
+function renderMovies(movies){
+  const grid=document.getElementById('grid');
+  grid.innerHTML='';
+  movies.forEach(m=>{
+    const poster=m.Poster!=='N/A'?m.Poster:'https://via.placeholder.com/160x240/2b2b2b/737373?text=No+Poster';
+    grid.innerHTML+=`<div class="movie-card" onclick="showDetail('${m.imdbID}')">
+      <img src="${poster}" alt="${m.Title}" loading="lazy"/>
+      <div class="info"><div class="title">${m.Title}</div><div class="year">${m.Year}</div><div class="type">${m.Type}</div></div>
+    </div>`;
+  });
+}
+async function showDetail(id){
+  try{
+    const res=await fetch(`https://www.omdbapi.com/?i=${id}&apikey=${API_KEY}`);
+    const m=await res.json();
+    document.getElementById('m-poster').src=m.Poster!=='N/A'?m.Poster:'https://via.placeholder.com/140x200/2b2b2b/737373?text=N/A';
+    document.getElementById('m-title').textContent=m.Title;
+    document.getElementById('m-meta').textContent=`${m.Year} · ${m.Genre} · ${m.Runtime}`;
+    document.getElementById('m-rating').textContent='⭐ '+m.imdbRating;
+    document.getElementById('m-plot').textContent=m.Plot;
+    document.getElementById('modal').style.display='flex';
+  }catch(e){console.error(e);}
+}
+function closeModal(){document.getElementById('modal').style.display='none';}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+document.getElementById('search-input').addEventListener('keydown',e=>{if(e.key==='Enter')searchMovies();});
+</script>
+</body>
+</html>
